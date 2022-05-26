@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/v78/react@18.1.0/es2022/react.bundle.js';
+import React from 'https://esm.sh/react@18';
 import { Application } from 'https://deno.land/x/oak@v10.6.0/mod.ts';
 import {
   default as wasmWeb,
@@ -13,17 +13,9 @@ import { App } from './app/App.tsx';
 
 await wasmWeb('https://cdn.esm.sh/@swc/wasm-web@1.2.189/wasm-web_bg.wasm');
 
-const importMap = JSON.stringify({
-  'imports': {
-    'react': 'https://esm.sh/v78/react@18.1.0/es2022/react.bundle.js',
-    'react-dom':
-      'https://esm.sh/v78/react-dom@18.1.0/es2022/react-dom.bundle.js',
-    'react-dom/client':
-      'https://esm.sh/v78/react-dom@18.1.0/es2022/client.bundle.js',
-    'react-streaming/client':
-      'https://esm.sh/v82/react-streaming@0.2.13/es2022/client.bundle.js',
-  },
-});
+const importMap = new TextDecoder('utf-8').decode(
+  await Deno.readFile(`${Deno.cwd()}/importMap.json`),
+);
 
 const app = new Application();
 
@@ -32,71 +24,54 @@ const parserOptions = {
   tsx: true,
   dynamicImport: true,
 };
+const directoryPath = `${Deno.cwd()}/app`;
+const transpileFiles: Record<string, string> = {};
+for await (
+  const entry of walk(directoryPath, {
+    includeDirs: false,
+    followSymlinks: true,
+    exts: [
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+    ],
+  })
+) {
+  const path = entry.path.replace(`${directoryPath}/`, '');
+  const source = await Deno.readTextFile(entry.path);
+  const transformResult = await transformSync(source, {
+    jsc: {
+      parser: parserOptions,
+      target: 'es2022',
+    },
+  });
+  const ast = await parseSync(transformResult.code, parserOptions);
+  const { code } = printSync(ast, { minify: true });
+  transpileFiles[path] = code;
+}
 
-let transpileFiles: Record<string, string>;
-export const getTranspileFiles = async (
-  directoryPath: string,
-): Promise<Record<string, string>> => {
-  if (transpileFiles) {
-    return transpileFiles;
+app.use(async (ctx) => {
+  // Transpile
+  if (ctx.request.url.pathname.startsWith('/.x/')) {
+    const transpileFileResult =
+      transpileFiles[ctx.request.url.pathname.replace('/.x/', '')];
+    if (transpileFileResult) {
+      ctx.response.headers.set('Content-Type', 'text/javascript;charset=UTF-8');
+      ctx.response.body = transpileFileResult;
+      return;
+    }
   }
-  const output: Record<string, string> = {};
-  for await (
-    const entry of walk(directoryPath, {
-      includeDirs: false,
-      followSymlinks: true,
-      exts: [
-        '.ts',
-        '.tsx',
-        '.js',
-        '.jsx',
-      ],
-    })
-  ) {
-    const path = entry.path.replace(`${directoryPath}/`, '');
-    const source = await Deno.readTextFile(entry.path);
-    const transformResult = await transformSync(source, {
-      jsc: {
-        parser: parserOptions,
-        target: 'es2022',
-      },
-    });
-    const ast = await parseSync(transformResult.code, parserOptions);
-    const { code } = printSync(ast, { minify: true });
-    output[path] = code;
-  }
-  return output;
-};
 
-// Transpile
-app.use(async ({ request, response }, next) => {
-  if (!request.url.pathname.startsWith('/.x/')) {
-    await next();
-    return;
-  }
-  const pathname = request.url.pathname.replace('/.x/', '');
-  const transpileFiles = await getTranspileFiles(`${Deno.cwd()}/app`);
-  const transpileFileResult = transpileFiles[pathname];
-  if (transpileFileResult) {
-    response.headers.set('Content-Type', 'text/javascript;charset=UTF-8');
-    response.body = transpileFileResult;
-    return;
-  }
-  await next();
-});
-
-// Static files
-app.use(async (ctx, next) => {
+  // Static files
   const path = await ctx.send({
     root: `${Deno.cwd()}/public`,
   });
-  if (!path) {
-    await next();
+  if (path) {
+    return;
   }
-});
 
-// React
-app.use(async ({ request, response }) => {
+  // React
   const ApplicationDocument = (
     <html>
       <head>
@@ -124,10 +99,10 @@ app.use(async ({ request, response }) => {
     </html>
   );
   const { readable } = await renderToStream(ApplicationDocument, {
-    userAgent: request.headers.get('user-agent') || undefined,
+    userAgent: ctx.request.headers.get('user-agent') || undefined,
   });
-  response.headers.set('Content-Type', 'text/html');
-  response.body = readable;
+  ctx.response.headers.set('Content-Type', 'text/html');
+  ctx.response.body = readable;
 });
 
 await app.listen({
