@@ -8,4 +8,4 @@ cd test-oak
 deno task dev
 ```
 
-Now open your browser and navigate to [http://localhost:8000/](http://localhost:8000/).
+Now open your browser and navigate to [http://localhost:8000/](http://localhost:8000/) (using a [supported browser](https://caniuse.com/import-maps)).
