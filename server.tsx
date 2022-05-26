@@ -1,17 +1,21 @@
 import React from 'react';
-import { Application } from 'oak';
 
 import { App } from './app/App.tsx';
 import { handleListenEvent } from './lib/server/handleListenEvent.ts';
 import { logger } from './middleware/logger.ts';
-import { staticFiles } from './middleware/staticFiles.ts';
+import { oak } from './deps.ts';
 import { react } from './middleware/react.tsx';
+import { staticFiles } from './middleware/staticFiles.ts';
 import { timing } from './middleware/timing.ts';
+import { transpile } from './middleware/transpile.ts';
 
-const app = new Application();
+const app = new oak.Application();
 
 app.use(logger);
 app.use(timing);
+app.use(transpile({
+  directory: `${Deno.cwd()}/app`,
+}));
 app.use(staticFiles({
   directory: `${Deno.cwd()}/public`,
 }));

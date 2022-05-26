@@ -1,17 +1,8 @@
 {
   "imports": {
-    "oak": "https://deno.land/x/oak@v10.6.0/mod.ts",
-
-    "react": "https://esm.sh/react@18?dev",
-    "react-dom": "https://esm.sh/react-dom@18?dev",
-    "react-dom/client": "https://esm.sh/react-dom@18/client?dev",
-    "react-dom/server": "https://esm.sh/react-dom@18/server?dev",
-    "react-helmet": "https://esm.sh/react-helmet-async?deps=react@18&dev",
-    "react-query": "https://esm.sh/react-query?deps=react@18&dev",
-    "react-streaming": "https://esm.sh/react-streaming?deps=react@18,react-dom@18&dev",
-    "react-streaming/client": "https://esm.sh/react-streaming/client?deps=react@18,react-dom@18&dev",
-    "react-streaming/server": "https://esm.sh/react-streaming/server?deps=react@18,react-dom@18&dev",
-    "react/jsx-dev-runtime": "https://esm.sh/react@18/jsx-dev-runtime.js?dev",
-    "react/jsx-runtime": "https://esm.sh/react@18/jsx-runtime.js?dev"
+    "react": "https://esm.sh/v78/react@18.1.0/es2022/react.bundle.js",
+    "react-dom": "https://esm.sh/v78/react-dom@18.1.0/es2022/react-dom.bundle.js",
+    "react-dom/client": "https://esm.sh/v78/react-dom@18.1.0/es2022/client.bundle.js",
+    "react-streaming/client": "https://esm.sh/v82/react-streaming@0.2.13/es2022/client.bundle.js"
   }
 }

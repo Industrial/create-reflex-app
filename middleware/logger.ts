@@ -1,6 +1,6 @@
-import type { Middleware } from 'oak';
+import { oak } from '../deps.ts';
 
-export const logger: Middleware = async (ctx, next) => {
+export const logger: oak.Middleware = async (ctx, next) => {
   await next();
   const rt = ctx.response.headers.get('X-Response-Time');
   console.log(`${ctx.request.method} ${ctx.request.url} - ${rt}`);

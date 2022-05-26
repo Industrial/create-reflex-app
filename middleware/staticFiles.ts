@@ -1,11 +1,11 @@
-import { Middleware } from 'oak';
+import { oak } from '../deps.ts';
 
 export type PublicFileProps = {
   directory: string;
 };
 
 export const staticFiles = ({ directory }: PublicFileProps) => {
-  const middleware: Middleware = async (ctx, next) => {
+  const middleware: oak.Middleware = async (ctx, next) => {
     const path = await ctx.send({
       root: directory,
     });
