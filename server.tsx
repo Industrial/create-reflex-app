@@ -72,7 +72,8 @@ app.use(async (ctx) => {
   }
 
   // React
-  const ApplicationDocument = (
+  ctx.response.headers.set('Content-Type', 'text/html');
+  ctx.response.body = (await renderToStream(
     <html>
       <head>
         <title>React Streaming</title>
@@ -96,13 +97,11 @@ app.use(async (ctx) => {
         >
         </script>
       </body>
-    </html>
-  );
-  const { readable } = await renderToStream(ApplicationDocument, {
-    userAgent: ctx.request.headers.get('user-agent') || undefined,
-  });
-  ctx.response.headers.set('Content-Type', 'text/html');
-  ctx.response.body = readable;
+    </html>,
+    {
+      userAgent: ctx.request.headers.get('user-agent') || undefined,
+    },
+  )).readable;
 });
 
 await app.listen({
