@@ -4,6 +4,7 @@ import { Application } from 'oak';
 import { App } from './app/App.tsx';
 import { handleListenEvent } from './lib/server/handleListenEvent.ts';
 import { logger } from './middleware/logger.ts';
+import { staticFiles } from './middleware/staticFiles.ts';
 import { react } from './middleware/react.tsx';
 import { timing } from './middleware/timing.ts';
 
@@ -11,18 +12,12 @@ const app = new Application();
 
 app.use(logger);
 app.use(timing);
+app.use(staticFiles({
+  directory: `${Deno.cwd()}/public`,
+}));
 
 const ServerApplication = () => {
-  return (
-    <html>
-      <head>
-        <title>React Streaming</title>
-      </head>
-      <body>
-        <App />
-      </body>
-    </html>
-  );
+  return <App />;
 };
 
 app.use(react(<ServerApplication />));
