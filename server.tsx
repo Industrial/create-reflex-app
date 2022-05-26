@@ -1,3 +1,4 @@
+import React from 'react';
 import { Application } from 'oak';
 
 import { App } from './app/App.tsx';
@@ -10,7 +11,21 @@ const app = new Application();
 
 app.use(logger);
 app.use(timing);
-app.use(react(App));
+
+const ServerApplication = () => {
+  return (
+    <html>
+      <head>
+        <title>React Streaming</title>
+      </head>
+      <body>
+        <App />
+      </body>
+    </html>
+  );
+};
+
+app.use(react(<ServerApplication />));
 
 app.addEventListener('listen', handleListenEvent);
 

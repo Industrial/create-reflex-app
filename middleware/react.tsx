@@ -1,14 +1,15 @@
-import React, { ComponentType } from 'react';
 import type { Middleware } from 'oak';
-import { renderToReadableStream } from 'react-dom/server';
+import { renderToStream } from 'react-streaming/server';
 
-export const react = (Component: ComponentType) => {
-  const middleware: Middleware = async (ctx) => {
-    const stream = await renderToReadableStream(<Component />);
+export const react = (Element: JSX.Element) => {
+  const middleware: Middleware = async ({ request, response }) => {
+    const { readable } = await renderToStream(Element, {
+      userAgent: request.headers.get('user-agent') || undefined,
+    });
 
-    ctx.response.headers.set('Content-Type', 'text/html');
+    response.headers.set('Content-Type', 'text/html');
 
-    ctx.response.body = stream;
+    response.body = readable;
   };
 
   return middleware;
