@@ -4,7 +4,6 @@
     "start": "deno run -A --location=http://localhost:8000 --unstable --no-check server.tsx",
     "cache": "deno cache --reload --no-check server.tsx"
   },
-  "importMap": "importMap.json",
   "compilerOptions": {
     "lib": [
       "deno.window",

@@ -1,8 +1,0 @@
-{
-  "imports": {
-    "react": "https://esm.sh/v78/react@18.1.0/es2022/react.bundle.js",
-    "react-dom": "https://esm.sh/v78/react-dom@18.1.0/es2022/react-dom.bundle.js",
-    "react-dom/client": "https://esm.sh/v78/react-dom@18.1.0/es2022/client.bundle.js",
-    "react-streaming/client": "https://esm.sh/v82/react-streaming@0.2.13/es2022/client.bundle.js"
-  }
-}
