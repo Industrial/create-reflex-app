@@ -31,8 +31,8 @@ const importMap = new TextDecoder('utf-8').decode(
 const hostname = Deno.env.get('hostname') ?? 'localhost';
 const port = Number(Deno.env.get('port') ?? 8000);
 const app = new Application();
-const appSourcePrefix = '/.x/';
-const vendorSourcePrefix = '/.x/';
+const appSourcePrefix = '/.x';
+const vendorSourcePrefix = '/.v';
 
 const parserOptions = {
   syntax: 'typescript',
@@ -108,15 +108,16 @@ const resolvedImportMap: ImportMap = {
     };
   }, {} as Record<string, string>),
 };
+console.log('resolvedImportMap', resolvedImportMap);
 
 // Compile app files.
 class SourceVisitor extends Visitor {
   private replaceImportStringLiteral(node: StringLiteral) {
     console.log('SourceVisitor#replaceImportStringLiteral', node.value);
     if (node.value.startsWith('.')) {
-      node.value = `${appSourcePrefix}${node.value}`;
+      node.value = `${appSourcePrefix}/${node.value}`;
     } else {
-      node.value = `${vendorSourcePrefix}${node.value}`;
+      node.value = `${vendorSourcePrefix}/${node.value}`;
     }
     return node;
   }
@@ -172,31 +173,46 @@ app.use(async (ctx, next) => {
 
 // Vendor Source
 app.use(async (ctx, next) => {
-  if (ctx.request.url.pathname.startsWith(vendorSourcePrefix)) {
-    const transpileFileResult = resolvedImportMap.imports[
-      ctx.request.url.pathname.replace(vendorSourcePrefix, '')
-    ];
-    if (transpileFileResult) {
-      ctx.response.headers.set('Content-Type', 'text/javascript;charset=UTF-8');
-      ctx.response.body = transpileFileResult;
-      return;
-    }
+  if (!ctx.request.url.pathname.startsWith(vendorSourcePrefix)) {
+    await next();
+    return;
   }
-  await next();
+
+  const path = ctx.request.url.pathname.replace(`${vendorSourcePrefix}/`, '');
+
+  const importMapResult = parsedImportMap.imports[path];
+  if (!importMapResult) {
+    await next();
+    return;
+  }
+
+  const transpileFileResult = resolvedImportMap.imports[importMapResult];
+  if (!transpileFileResult) {
+    await next();
+    return;
+  }
+
+  ctx.response.headers.set('Content-Type', 'text/javascript;charset=UTF-8');
+  ctx.response.body = transpileFileResult;
 });
 
 // App Source
 app.use(async (ctx, next) => {
-  if (ctx.request.url.pathname.startsWith(appSourcePrefix)) {
-    const transpileFileResult =
-      transpileFiles[ctx.request.url.pathname.replace(appSourcePrefix, '')];
-    if (transpileFileResult) {
-      ctx.response.headers.set('Content-Type', 'text/javascript;charset=UTF-8');
-      ctx.response.body = transpileFileResult;
-      return;
-    }
+  if (!ctx.request.url.pathname.startsWith(appSourcePrefix)) {
+    await next();
+    return;
   }
-  await next();
+
+  const path = ctx.request.url.pathname.replace(`${appSourcePrefix}/`, '');
+
+  const transpileFileResult = transpileFiles[path];
+  if (!transpileFileResult) {
+    await next();
+    return;
+  }
+
+  ctx.response.headers.set('Content-Type', 'text/javascript;charset=UTF-8');
+  ctx.response.body = transpileFileResult;
 });
 
 // Static files
@@ -210,6 +226,7 @@ app.use(async (ctx, next) => {
   await next();
 });
 
+/* <script type='importmap' dangerouslySetInnerHTML={{ __html: importMap }}></script> */
 // React
 app.use(async (ctx) => {
   ctx.response.headers.set('Content-Type', 'text/html');
@@ -223,16 +240,11 @@ app.use(async (ctx) => {
           <App />
         </div>
         <script
-          type='importmap'
-          dangerouslySetInnerHTML={{ __html: importMap }}
-        >
-        </script>
-        <script
           type='module'
           defer
           dangerouslySetInnerHTML={{
             __html:
-              `import{createElement}from'react';import{hydrateRoot}from'react-dom/client';import{ReactStreaming}from'react-streaming/client';import{App}from'/.x/App.tsx';hydrateRoot(document.getElementById('root'),createElement(ReactStreaming,null,createElement(App)));`,
+              `import{createElement}from'${vendorSourcePrefix}/react';import{hydrateRoot}from'${vendorSourcePrefix}/react-dom/client';import{ReactStreaming}from'${vendorSourcePrefix}/react-streaming/client';import{App}from'/.x/App.tsx';hydrateRoot(document.getElementById('root'),createElement(ReactStreaming,null,createElement(App)));`,
           }}
         >
         </script>
