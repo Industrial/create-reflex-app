@@ -1,7 +1,7 @@
 {
   "tasks": {
     "dev": "deno task start",
-    "start": "deno run -A --location=http://localhost:8000 --unstable --no-check server.tsx",
+    "start": "deno run -A --unstable --no-check server.tsx",
     "cache": "deno cache --reload --no-check server.tsx"
   },
   "importMap": "importMap.json",
