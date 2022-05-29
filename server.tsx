@@ -1,9 +1,4 @@
 import React from 'https://esm.sh/react@18';
-import type {
-  CallExpression,
-  ImportDeclaration,
-  StringLiteral,
-} from 'https://esm.sh/@swc/core@1.2.171/types.d.ts';
 import { Application } from 'https://deno.land/x/oak@v10.6.0/mod.ts';
 import { Visitor } from 'https://esm.sh/@swc/core@1.2.171/Visitor.js';
 import { createCache } from 'https://deno.land/x/deno_cache@0.4.1/mod.ts';
@@ -18,10 +13,12 @@ import { renderToStream } from 'https://esm.sh/react-streaming@0.2.13/server?dep
 import { walk } from 'https://deno.land/std@0.140.0/fs/mod.ts';
 
 import { App } from './app/App.tsx';
+import * as object from './lib/object.ts';
+import { ImportVisitor } from './lib/ast/ImportVisitor.ts';
+import { internalToExternalURL } from './lib/path.ts';
 
 const cache = createCache();
 
-console.log('Loading WASM module');
 await wasmWeb('https://cdn.esm.sh/@swc/wasm-web@1.2.189/wasm-web_bg.wasm');
 
 const importMap = new TextDecoder('utf-8').decode(
@@ -75,74 +72,49 @@ const fetchSourceFromPath = async (path: string) => {
 };
 
 // Resolve ImportMap
-console.log('Resolving ImportMap');
 type ImportMap = {
   imports: Record<string, string>;
 };
 const parsedImportMap = JSON.parse(importMap) as ImportMap;
-const resolvedImportMap: ImportMap = {
-  imports: (await Promise.all(
-    Object.values(parsedImportMap.imports).map(async (path) => {
-      const graph = await createGraph(path, {
-        kind: 'codeOnly',
-        cacheInfo: cache.cacheInfo,
-        load: cache.load,
-      });
-      const { modules } = graph.toJSON();
-
-      return (await Promise.all(modules.map(
-        async ({ specifier, local }): Promise<[string, string]> => {
-          const source = await fetchSourceFromPath(local || specifier);
-          const compiled = await compileSource(source);
-          return [specifier, compiled];
-        },
-      ))).reduce((acc, [specifier, compiled]) => {
-        acc[specifier] = compiled;
-        return acc;
-      }, {} as Record<string, string>);
-    }),
-  )).reduce((acc, imports) => {
-    return {
-      ...acc,
-      ...imports,
-    };
-  }, {} as Record<string, string>),
-};
-console.log('resolvedImportMap', resolvedImportMap);
-
-// Compile app files.
-class SourceVisitor extends Visitor {
-  private replaceImportStringLiteral(node: StringLiteral) {
-    console.log('SourceVisitor#replaceImportStringLiteral', node.value);
-    if (node.value.startsWith('.')) {
-      node.value = `${appSourcePrefix}/${node.value}`;
-    } else {
-      node.value = `${vendorSourcePrefix}/${node.value}`;
-    }
-    return node;
-  }
-
-  public override visitImportDeclaration(node: ImportDeclaration) {
-    node.source = this.replaceImportStringLiteral(node.source);
-    return super.visitImportDeclaration(node);
-  }
-
-  public override visitCallExpression(node: CallExpression) {
-    if (node.callee.type === 'Import') {
-      node.arguments = node.arguments.map((argument) => {
-        if (argument.expression.type === 'StringLiteral') {
-          argument.expression = this.replaceImportStringLiteral(
-            argument.expression,
-          );
-        }
-
-        return argument;
-      });
-    }
-    return super.visitCallExpression(node);
+const resolvedImports: Record<string, string> = {};
+for (const [_key, path] of Object.entries(parsedImportMap.imports)) {
+  const graph = await createGraph(path, {
+    kind: 'codeOnly',
+    cacheInfo: cache.cacheInfo,
+    load: cache.load,
+  });
+  const { modules } = graph.toJSON();
+  for (const module of modules) {
+    const { specifier, local } = module;
+    resolvedImports[specifier] = String(local);
   }
 }
-console.log('Compiling app files');
+
+const compiledImports = await object.asyncMap<string>(
+  async (local, specifier) => {
+    const path = local || specifier;
+    const source = await fetchSourceFromPath(path);
+    try {
+      const compiled = await compileSource(
+        source,
+        new ImportVisitor(
+          specifier,
+          appSourcePrefix,
+          vendorSourcePrefix,
+          parsedImportMap.imports,
+          resolvedImports,
+        ),
+      );
+      return compiled;
+    } catch (error: unknown) {
+      console.error(`Error compiling ${specifier}. Using source.`);
+      return source;
+    }
+  },
+  resolvedImports,
+);
+
+// Compile app files.
 const directoryPath = `${Deno.cwd()}/app`;
 const transpileFiles: Record<string, string> = {};
 for await (
@@ -159,7 +131,16 @@ for await (
 ) {
   const path = entry.path.replace(`${directoryPath}/`, '');
   const source = await Deno.readTextFile(entry.path);
-  transpileFiles[path] = await compileSource(source, new SourceVisitor());
+  transpileFiles[path] = await compileSource(
+    source,
+    new ImportVisitor(
+      path,
+      appSourcePrefix,
+      vendorSourcePrefix,
+      parsedImportMap.imports,
+      resolvedImports,
+    ),
+  );
 }
 
 // Request Logger
@@ -178,15 +159,23 @@ app.use(async (ctx, next) => {
     return;
   }
 
+  // Find it in the import map
   const path = ctx.request.url.pathname.replace(`${vendorSourcePrefix}/`, '');
+  const importMapURL = parsedImportMap.imports[path];
 
-  const importMapResult = parsedImportMap.imports[path];
-  if (!importMapResult) {
-    await next();
-    return;
+  // Also try the external url directly in the compiled imports
+  const externalURL = internalToExternalURL(
+    ctx.request.url.toString(),
+    vendorSourcePrefix,
+  );
+
+  let transpileFileResult;
+  if (importMapURL) {
+    transpileFileResult = compiledImports[importMapURL];
   }
-
-  const transpileFileResult = resolvedImportMap.imports[importMapResult];
+  if (!transpileFileResult) {
+    transpileFileResult = compiledImports[externalURL];
+  }
   if (!transpileFileResult) {
     await next();
     return;
