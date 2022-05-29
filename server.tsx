@@ -1,4 +1,4 @@
-import React from 'https://esm.sh/react@18';
+import React from 'https://esm.sh/react@18.1.0';
 import { Application } from 'https://deno.land/x/oak@v10.6.0/mod.ts';
 import { Visitor } from 'https://esm.sh/@swc/core@1.2.171/Visitor.js';
 import { createCache } from 'https://deno.land/x/deno_cache@0.4.1/mod.ts';

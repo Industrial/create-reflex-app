@@ -4,6 +4,6 @@
     "react-dom": "https://esm.sh/react-dom@18.1.0?dev",
     "react-dom/client": "https://esm.sh/react-dom@18.1.0/client?dev",
     "react-streaming": "https://esm.sh/react-streaming@0.2.13?dev",
-    "react-streaming/client": "https://esm.sh/react-streaming@0.2.13?dev"
+    "react-streaming/client": "https://esm.sh/react-streaming@0.2.13/client?dev"
   }
 }
