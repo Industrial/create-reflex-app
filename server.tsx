@@ -25,7 +25,7 @@ const importMap = new TextDecoder('utf-8').decode(
   await Deno.readFile(`${Deno.cwd()}/importMap.json`),
 );
 
-const hostname = Deno.env.get('hostname') ?? 'localhost';
+const hostname = Deno.env.get('hostname') ?? '127.0.0.1';
 const port = Number(Deno.env.get('port') ?? 8000);
 const app = new Application();
 const appSourcePrefix = '/.x';
@@ -232,8 +232,12 @@ app.use(async (ctx) => {
           type='module'
           defer
           dangerouslySetInnerHTML={{
-            __html:
-              `import{createElement}from'${vendorSourcePrefix}/react';import{hydrateRoot}from'${vendorSourcePrefix}/react-dom/client';import{ReactStreaming}from'${vendorSourcePrefix}/react-streaming/client';import{App}from'/.x/App.tsx';hydrateRoot(document.getElementById('root'),createElement(ReactStreaming,null,createElement(App)));`,
+            __html: `
+import { createElement } from '${vendorSourcePrefix}/react';
+import { hydrateRoot } from '${vendorSourcePrefix}/react-dom/client';
+import { App } from '/.x/App.tsx';
+hydrateRoot(document.getElementById('root'),createElement(App));
+`,
           }}
         >
         </script>
