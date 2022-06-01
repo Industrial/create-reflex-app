@@ -7,7 +7,7 @@ import { staticFile } from './lib/middleware/staticFile.ts';
 import { vendorSource } from './lib/middleware/vendorSource.ts';
 
 const hostname = Deno.env.get('hostname') ?? '127.0.0.1';
-const port = Number(Deno.env.get('port') ?? 8000);
+const port = Number(Deno.env.get('port') ?? 3000);
 const app = new Application();
 const appSourcePrefix = '/.x';
 const vendorSourcePrefix = '/.v';
