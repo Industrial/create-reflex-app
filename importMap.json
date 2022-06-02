@@ -1,8 +1,8 @@
 {
   "imports": {
-    "react": "https://esm.sh/v83/react@18.1.0/es2022/react.development.js",
-    "react-dom": "https://esm.sh/v83/react-dom@18.1.0/es2022/react-dom.development.js",
-    "react-dom/client": "https://esm.sh/v83/react-dom@18.1.0/es2022/client.development.js",
-    "react-query": "https://esm.sh/v83/react-query@3.39.1/es2022/react-query.development.js"
+    "react": "https://esm.sh/react@18.1.0?dev",
+    "react-dom": "https://esm.sh/react-dom@18.1.0?dev",
+    "react-dom/client": "https://esm.sh/react-dom@18.1.0/client?dev",
+    "react-query": "https://esm.sh/react-query@3.39.1?dev"
   }
 }
