@@ -10,7 +10,7 @@ export type ServerSideRender = {
 
 export const serverSideRender = ({ vendorSourcePrefix }: ServerSideRender) => {
   const middleware: Middleware = async (ctx) => {
-    ctx.response.headers.set('Content-Type', 'text/html');
+    ctx.response.headers.set('Content-Type', 'text/html; charset=utf-8');
 
     ctx.response.body = await renderToReadableStream(
       <Document vendorSourcePrefix={vendorSourcePrefix} />,
