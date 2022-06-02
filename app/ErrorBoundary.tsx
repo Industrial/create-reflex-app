@@ -11,9 +11,9 @@ export type ErrorBoundaryState = {
 
 export class ErrorBoundary
   extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState;
+  public override state: ErrorBoundaryState;
 
-  constructor(props: ErrorBoundaryProps) {
+  public constructor(props: ErrorBoundaryProps) {
     super(props);
 
     this.state = {
@@ -29,11 +29,11 @@ export class ErrorBoundary
     };
   }
 
-  componentDidCatch(error: Error, _errorInfo: unknown) {
+  public override componentDidCatch(error: Error, _errorInfo: unknown) {
     console.error(error);
   }
 
-  render() {
+  public override render() {
     if (this.state.hasError) {
       return <h1>{this.state.error?.message}</h1>;
     }
