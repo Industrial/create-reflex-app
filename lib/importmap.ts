@@ -42,13 +42,13 @@ export const compiledImports = await asyncMap<string>(
     try {
       const compiled = await compileSource(
         source,
-        new ImportVisitor(
+        new ImportVisitor({
           specifier,
           appSourcePrefix,
           vendorSourcePrefix,
-          parsedImportMap.imports,
+          parsedImports: parsedImportMap.imports,
           resolvedImports,
-        ),
+        }),
       );
       return compiled;
     } catch (error: unknown) {
@@ -77,12 +77,13 @@ for await (
   const source = await Deno.readTextFile(entry.path);
   transpileFiles[path] = await compileSource(
     source,
-    new ImportVisitor(
-      path,
+    new ImportVisitor({
+      specifier: path,
+      directoryPath,
       appSourcePrefix,
       vendorSourcePrefix,
-      parsedImportMap.imports,
+      parsedImports: parsedImportMap.imports,
       resolvedImports,
-    ),
+    }),
   );
 }

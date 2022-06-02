@@ -1,5 +1,5 @@
 // import { QueryClient, QueryClientProvider, useQuery } from 'react-query';
-import React from 'react';
+import React, { Suspense } from 'react';
 
 // export const CatFacts = () => {
 //   const { isLoading, error, data } = useQuery('catFacts', async () => {
@@ -35,9 +35,9 @@ import React from 'react';
 
 export const App = () => {
   return (
-    <>
+    <div>
       <h1>Application</h1>
       <p>These are facts about cats:</p>
-    </>
+    </div>
   );
 };

@@ -6,25 +6,41 @@ import type {
   StringLiteral,
 } from 'https://esm.sh/@swc/core@1.2.171/types.d.ts';
 import { Visitor } from 'https://esm.sh/@swc/core@1.2.171/Visitor.js';
-import { dirname, normalize } from 'https://deno.land/std@0.140.0/path/mod.ts';
+import {
+  dirname,
+  normalize,
+  resolve,
+} from 'https://deno.land/std@0.140.0/path/mod.ts';
+
+export type ImportVisitorProps = {
+  specifier: string;
+  directoryPath?: string;
+  appSourcePrefix: string;
+  vendorSourcePrefix: string;
+  parsedImports: Record<string, string>;
+  resolvedImports: Record<string, string>;
+};
 
 export class ImportVisitor extends Visitor {
   specifier: string;
+  directoryPath?: string;
   appSourcePrefix: string;
   vendorSourcePrefix: string;
 
   parsedImports: Record<string, string>;
   resolvedImports: Record<string, string>;
 
-  constructor(
-    specifier: string,
-    appSourcePrefix: string,
-    vendorSourcePrefix: string,
-    parsedImports: Record<string, string>,
-    resolvedImports: Record<string, string>,
-  ) {
+  constructor({
+    specifier,
+    directoryPath,
+    appSourcePrefix,
+    vendorSourcePrefix,
+    parsedImports,
+    resolvedImports,
+  }: ImportVisitorProps) {
     super();
     this.specifier = specifier;
+    this.directoryPath = directoryPath;
     this.appSourcePrefix = appSourcePrefix;
     this.vendorSourcePrefix = vendorSourcePrefix;
     this.parsedImports = parsedImports;
@@ -42,6 +58,11 @@ export class ImportVisitor extends Visitor {
 
     // Local import.
     if (node.value.startsWith('.')) {
+      if (this.directoryPath) {
+        node.value = resolve(`${this.appSourcePrefix}/${node.value}`);
+        return node;
+      }
+
       const { hostname, pathname } = new URL(this.specifier);
       const newpathname = normalize(`${dirname(pathname)}/${node.value}`);
       node.value = `${this.vendorSourcePrefix}/${hostname}${newpathname}`;
