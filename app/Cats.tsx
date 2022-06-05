@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { fetchData } from './lib/suspense.ts';
 
 type CatData = {

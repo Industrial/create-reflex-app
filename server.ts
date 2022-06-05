@@ -1,6 +1,4 @@
-import { reflexMiddleware } from 'https://deno.land/x/reflex@v0.3.0/mod.ts';
-import { Application } from 'https://deno.land/x/oak@v10.6.0/mod.ts';
-
+import { Application, reflexMiddleware } from './deps.ts';
 import { Document } from './app/Document.tsx';
 
 const hostname = Deno.env.get('hostname') ?? '127.0.0.1';

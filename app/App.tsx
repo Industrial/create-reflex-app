@@ -1,4 +1,5 @@
 import React, { Suspense } from 'react';
+
 import { Cats } from './Cats.tsx';
 import { ErrorBoundary } from './ErrorBoundary.tsx';
 
