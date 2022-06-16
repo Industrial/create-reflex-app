@@ -1,9 +1,9 @@
 import React from 'react';
-import type { DocumentComponent } from 'https://deno.land/x/reflex@v0.4.0/mod.ts';
+import type { DocumentElement } from '../deps.ts';
 
 import { App } from './App.tsx';
 
-export const Document: DocumentComponent = ({ vendorSourcePrefix }) => {
+export const Document: DocumentElement = ({ vendorSourcePrefix }) => {
   return (
     <html>
       <head>
@@ -24,8 +24,6 @@ export const Document: DocumentComponent = ({ vendorSourcePrefix }) => {
                 const rootElement = document.getElementById('root');
                 const appElement = createElement(App);
                 hydrateRoot(rootElement, appElement);
-                // const root = createRoot(rootElement);
-                // root.render(appElement);
               `,
           }}
         >
